@@ -1,4 +1,25 @@
 /**
+ * @summary A method which takes a single argument (a query or a function which returns a query)
+ *          and returns a CollectionView
+ * @locus Anywhere
+ * @method where
+ * @memberOf Mongo.Collection
+ * @param {Object | Function} query A query object or function used to filter the results of a collection operation
+ * @return {Object} The narrowed collection view object
+ */
+Mongo.Collection.prototype.where = function (query, options) {
+  var parent = this;
+  var collectionView = new CollectionView(parent);
+
+  // If query is a function we should pass the result of calling that function
+  if (_.isFunction(query))
+    query = query();
+
+  collectionView._narrowingQuery = _.extend({}, parent._narrowingQuery, query);
+  return collectionView;
+};
+
+/**
  * @summary A CollectionView represents a filtered view of a Mongo.Collection
  * @instancename collectionView
  */
@@ -24,27 +45,6 @@ _.each(Mongo.Collection.prototype, function (val, key) {
     };
   }
 });
-
-/**
- * @summary A method which takes a single argument (a query or a function which returns a query)
- *          and returns a CollectionView
- * @locus Anywhere
- * @method where
- * @memberOf Mongo.Collection
- * @param {Object | Function} query A query object or function used to filter the results of a collection operation
- * @return {Object} The narrowed collection view object
- */
-Mongo.Collection.prototype.where = function (query, options) {
-  var parent = this;
-  var collectionView = new CollectionView(parent);
-
-  // If query is a function we should pass the result of calling that function
-  if (_.isFunction(query))
-    query = query();
-
-  collectionView._narrowingQuery = _.extend({}, parent._narrowingQuery, query);
-  return collectionView;
-};
 
 /**
  * @summary MONKEY PATCH! We modify the _selectorIsIdPerhapsAsObject to permit ids as part of a client
@@ -79,6 +79,7 @@ CollectionView.prototype._mutateSelector = function (selector) {
  * @summary We need to override these fields to correctly mutate the selector argument
  *          "find", "findOne", "insert", "update", "remove", "upsert"
  */
+// XXX when chaining .where() methods, the first one gets overriden
 _.each(["find", "findOne"], function (key) {
   CollectionView.prototype[key] = function (selector, callback) {
     selector = this._mutateSelector(selector);

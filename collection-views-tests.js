@@ -43,6 +43,16 @@ Tinytest.add('where - find - t3 (query can be a function)', function (test) {
   test.length(docs, 2);
 });
 
+Tinytest.add('where - find - t4 (chaining where methods)', function (test) {
+  var docs = Books
+    .where({ kind: 'book' })
+    .where({ genre: 'fiction' })
+    .find({})
+    .fetch();
+  test.equal(_.last(docs).title, 'Fiction Book 2');
+  test.length(docs, 2);
+});
+
 // update() should only affect documents which match both queries
 Tinytest.add('where - update - t1', function (test) {
   var affectedCount = Books.where({ kind: 'book' }).update({}, 
