@@ -1,11 +1,11 @@
 # Narrowed collection views
 
-Creates a "where" method for your collections for narrowing your queriesmocks the results of a db operation.
+Creates a `where` method for your collections for narrowing your queries
 
 **This is a work in progress.**
 
 ### Installation
-Simply add the `useful:collection-views` package to your meteor app and you can start using the `where` methods on your collections.
+Simply add the `useful:collection-views` package to your meteor app and you can start using the `where` method on your collections.
 
 ### Examples
 ```
