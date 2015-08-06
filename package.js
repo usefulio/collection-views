@@ -17,7 +17,10 @@ Package.onUse(function(api) {
 });
 
 Package.onTest(function(api) {
-  api.use('tinytest');
+  api.use([
+    'tinytest'
+    , 'mongo'
+  ]);
   api.use('useful:collection-views');
   api.addFiles('collection-views-tests.js');
 });
