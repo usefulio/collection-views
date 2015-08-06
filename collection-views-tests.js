@@ -1,4 +1,5 @@
 var Books = new Mongo.Collection(null);
+Books.remove({});
 Books.insert({ title: 'Fiction Book 1', kind: 'book', genre: 'fiction', catalogId: 0 });
 Books.insert({ title: 'Fiction Book 2', kind: 'book', genre: 'fiction', catalogId: 1 });
 Books.insert({ title: 'Science Book 1', kind: 'book', genre: 'science', catalogId: 2 });
@@ -31,6 +32,14 @@ Tinytest.add('where - find - t1', function (test) {
 Tinytest.add('where - find - t2', function (test) {
   var docs = Books.where({ genre: 'science' }).find({}).fetch();
   test.equal(docs[0].title, 'Science Book 1');
+  test.length(docs, 2);
+});
+
+Tinytest.add('where - find - t3 (query can be a function)', function (test) {
+  var docs = Books.where(function () {
+    return { kind: 'book' }
+  }).find({ genre: 'fiction' }).fetch();
+  test.equal(_.last(docs).title, 'Fiction Book 2');
   test.length(docs, 2);
 });
 

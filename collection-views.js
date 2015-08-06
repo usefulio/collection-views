@@ -37,6 +37,11 @@ _.each(Mongo.Collection.prototype, function (val, key) {
 Mongo.Collection.prototype.where = function (query, options) {
   var parent = this;
   var collectionView = new CollectionView(parent);
+
+  // If query is a function we should pass the result of calling that function
+  if (_.isFunction(query))
+    query = query();
+
   collectionView._narrowingQuery = _.extend({}, parent._narrowingQuery, query);
   return collectionView;
 };
