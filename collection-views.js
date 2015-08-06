@@ -10,12 +10,7 @@
 Mongo.Collection.prototype.where = function (query, options) {
   var parent = this;
   var collectionView = new CollectionView(parent);
-
-  // If query is a function we should pass the result of calling that function
-  if (_.isFunction(query))
-    query = query();
-
-  collectionView._narrowingQuery = _.extend({}, parent._narrowingQuery, query);
+  collectionView._narrowingQuery = _.extend({}, parent._narrowingQuery, {query: query});
   return collectionView;
 };
 
@@ -70,6 +65,12 @@ LocalCollection._selectorIsIdPerhapsAsObject = function (selector) {
  * @return {Object} The narrowed selector
  */
 CollectionView.prototype._mutateSelector = function (selector) {
+  // If this._narrowingQuery.query is a function we should pass the result of calling that function
+  if (_.isFunction(this._narrowingQuery.query))
+    this._narrowingQuery.query = this._narrowingQuery.query();
+  
+  this._narrowingQuery = _.extend({}, this._narrowingQuery.query);
+
   if (LocalCollection._selectorIsId(selector))
     selector = {_id: selector};
   return _.extend({}, selector, this._narrowingQuery);
