@@ -3,29 +3,45 @@
  * @instancename collectionView
  */
 CollectionView = function (sourceCollection) {
-  // XXX This is always false:
   if (sourceCollection instanceof CollectionView) {
     this._mongoCollection = sourceCollection._mongoCollection
     this._parentCollection = sourceCollection;
-  // XXX And this is always true:
   } else if (sourceCollection instanceof Mongo.Collection) {
     this._mongoCollection = sourceCollection;
   } else
     // we don't need to support collection views which auto-create a backing collection
     throw new Error('CollectionView must have a backing mongo collection');
-}
+  
+  var self = this;
 
-/**
- * @summary We want users to be able to treat this as an ordinary mongo collection
- *          so here we attach all the Mongo.Collection.prototype methods
- */
-_.each(Mongo.Collection.prototype, function (val, key) {
-  if (typeof val === "function") {
-    CollectionView.prototype[key] = function () {
-      return this._mongoCollection[key].apply(this._mongoCollection, arguments);
+  // We want users to be able to treat this as an ordinary mongo collection
+  // so here we attach all the Mongo.Collection.prototype methods
+  _.each(Mongo.Collection.prototype, function (val, key) {
+    // XXX Find a more elegant way to exclude 'where'
+    if (typeof val === "function" && key !== 'where') {
+      self[key] = function () {
+        return self._mongoCollection[key].apply(self._mongoCollection, arguments);
+      };
+    }
+  });
+
+ // We need to override these fields to correctly mutate the selector argument
+ // "find", "findOne", "insert", "update", "remove", "upsert"
+  _.each(["find", "findOne"], function (key) {
+    self[key] = function (selector, callback) {
+      selector = self._mutateSelector(selector);
+      return self._mongoCollection[key](selector, callback);
     };
-  }
-});
+  });
+
+  _.each(["update", "remove", "upsert"], function (key) {
+    self[key] = function (selector) {
+      var args = _.toArray(arguments);
+      args[0] = self._mutateSelector(selector);
+      return self._mongoCollection[key].apply(self._mongoCollection, args);
+    };
+  });
+}
 
 /**
  * @summary A method which takes a single argument (a query or a function which returns a query)
@@ -85,23 +101,3 @@ CollectionView.prototype._mutateSelector = function (selector, query) {
 
   return _.extend({}, selector, query);
 };
-
-/**
- * @summary We need to override these fields to correctly mutate the selector argument
- *          "find", "findOne", "insert", "update", "remove", "upsert"
- */
-// XXX when chaining .where() methods, the first one gets overriden
-_.each(["find", "findOne"], function (key) {
-  CollectionView.prototype[key] = function (selector, callback) {
-    selector = this._mutateSelector(selector);
-    return this._mongoCollection[key](selector, callback);
-  };
-});
-
-_.each(["update", "remove", "upsert"], function (key) {
-  CollectionView.prototype[key] = function (selector) {
-    var args = _.toArray(arguments);
-    args[0] = this._mutateSelector(selector);
-    return this._mongoCollection[key].apply(this._mongoCollection, args);
-  };
-});
