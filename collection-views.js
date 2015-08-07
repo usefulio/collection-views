@@ -19,15 +19,15 @@ Mongo.Collection.prototype.where = function (query, options) {
  * @instancename collectionView
  */
 CollectionView = function (collection, options) {
-  if (collection instanceof CollectionView)
-    return CollectionView;
-
-  if (collection instanceof Mongo.Collection) {
+  if (collection instanceof CollectionView) {
+    this._mongoCollection = collection._mongoCollection
+    this._parentCollection = collection;
+  } else if (collection instanceof Mongo.Collection) {
     this._mongoCollection = collection;
-  } else {
-    this._mongoCollection = new Mongo.Collection(collection, options);
-  }
-};
+  } else
+    // we don't need to support collection views which auto-create a backing collection
+    throw new Error('CollectionView must have a backing mongo collection');
+}
 
 /**
  * @summary We want users to be able to treat this as an ordinary mongo collection
