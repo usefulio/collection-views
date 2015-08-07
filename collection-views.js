@@ -7,10 +7,11 @@
  * @param {Object | Function} query A query object or function used to filter the results of a collection operation
  * @return {Object} The narrowed collection view object
  */
-Mongo.Collection.prototype.where = function (query, options) {
-  var parent = this;
-  var collectionView = new CollectionView(parent);
-  collectionView._narrowingQuery = _.extend({}, parent._narrowingQuery, {query: query});
+Mongo.Collection.prototype.where = function (query) {
+  var sourceCollection = this;
+  var collectionView = new CollectionView(sourceCollection);
+  collectionView._narrowingQuery = {query: query}; // XXX this gets overwritten
+  collectionView._narrowingParent = sourceCollection;
   return collectionView;
 };
 
@@ -18,12 +19,14 @@ Mongo.Collection.prototype.where = function (query, options) {
  * @summary A CollectionView represents a filtered view of a Mongo.Collection
  * @instancename collectionView
  */
-CollectionView = function (collection, options) {
-  if (collection instanceof CollectionView) {
-    this._mongoCollection = collection._mongoCollection
-    this._parentCollection = collection;
-  } else if (collection instanceof Mongo.Collection) {
-    this._mongoCollection = collection;
+CollectionView = function (sourceCollection) {
+  // XXX This is always false:
+  if (sourceCollection instanceof CollectionView) {
+    this._mongoCollection = sourceCollection._mongoCollection
+    this._parentCollection = sourceCollection;
+  // XXX And this is always true:
+  } else if (sourceCollection instanceof Mongo.Collection) {
+    this._mongoCollection = sourceCollection;
   } else
     // we don't need to support collection views which auto-create a backing collection
     throw new Error('CollectionView must have a backing mongo collection');
@@ -48,7 +51,6 @@ _.each(Mongo.Collection.prototype, function (val, key) {
  *          e.g. we want to allow selectors like {_id: "123", kind: "public"}
  */
 var LocalCollection = Package.minimongo.LocalCollection;
-// XXX It's not clear to me where we should use _selectorIsIdPerhapsAsObject
 LocalCollection._selectorIsIdPerhapsAsObject = function (selector) {
   return LocalCollection._selectorIsId(selector) ||
     (selector && typeof selector === "object" && selector._id && LocalCollection._selectorIsId(selector._id));
@@ -64,16 +66,25 @@ LocalCollection._selectorIsIdPerhapsAsObject = function (selector) {
  * @param {Object | String} The input selector
  * @return {Object} The narrowed selector
  */
-CollectionView.prototype._mutateSelector = function (selector) {
-  // If this._narrowingQuery.query is a function we should pass the result of calling that function
-  if (_.isFunction(this._narrowingQuery.query))
-    this._narrowingQuery.query = this._narrowingQuery.query();
-  
-  this._narrowingQuery = _.extend({}, this._narrowingQuery.query);
+CollectionView.prototype._mutateSelector = function (selector, query) {
+  var collection = this
+    , query = query || {}; // XXX <- not sure if this is right
+
+  while (collection) {
+    if (! _.isUndefined(collection._narrowingQuery)) {
+      var narrowingQuery = collection._narrowingQuery.query;
+      // If narrowingQuery is a function we should pass the result of calling that function
+      if (_.isFunction(narrowingQuery))
+        narrowingQuery = narrowingQuery();
+      _.extend(query, narrowingQuery)
+    }
+    collection = collection._narrowingParent // XXX <- not sure if this is right
+  }
 
   if (LocalCollection._selectorIsId(selector))
     selector = {_id: selector};
-  return _.extend({}, selector, this._narrowingQuery);
+
+  return _.extend({}, selector, query); // XXX <- not sure if this is right
 };
 
 /**
