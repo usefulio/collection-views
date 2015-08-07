@@ -1,21 +1,4 @@
 /**
- * @summary A method which takes a single argument (a query or a function which returns a query)
- *          and returns a CollectionView
- * @locus Anywhere
- * @method where
- * @memberOf Mongo.Collection
- * @param {Object | Function} query A query object or function used to filter the results of a collection operation
- * @return {Object} The narrowed collection view object
- */
-Mongo.Collection.prototype.where = function (query) {
-  var sourceCollection = this;
-  var collectionView = new CollectionView(sourceCollection);
-  collectionView._narrowingQuery = {query: query}; // XXX this gets overwritten
-  collectionView._narrowingParent = sourceCollection;
-  return collectionView;
-};
-
-/**
  * @summary A CollectionView represents a filtered view of a Mongo.Collection
  * @instancename collectionView
  */
@@ -45,6 +28,22 @@ _.each(Mongo.Collection.prototype, function (val, key) {
 });
 
 /**
+ * @summary A method which takes a single argument (a query or a function which returns a query)
+ *          and returns a CollectionView
+ * @locus Anywhere
+ * @method where
+ * @memberOf Mongo.Collection
+ * @param {Object | Function} query A query object or function used to filter the results of a collection operation
+ * @return {Object} The narrowed collection view object
+ */
+Mongo.Collection.prototype.where = CollectionView.prototype.where = function (query) {
+  var sourceCollection = this;
+  var collectionView = new CollectionView(sourceCollection);
+  collectionView._narrowingQuery = {query: query};
+  return collectionView;
+};
+
+/**
  * @summary MONKEY PATCH! We modify the _selectorIsIdPerhapsAsObject to permit ids as part of a client
  *          selector. This doesn't present security problems because the query will
  *          still only find/update a single document with the specified id
@@ -68,7 +67,7 @@ LocalCollection._selectorIsIdPerhapsAsObject = function (selector) {
  */
 CollectionView.prototype._mutateSelector = function (selector, query) {
   var collection = this
-    , query = query || {}; // XXX <- not sure if this is right
+    , query = query || {};
 
   while (collection) {
     if (! _.isUndefined(collection._narrowingQuery)) {
@@ -78,13 +77,13 @@ CollectionView.prototype._mutateSelector = function (selector, query) {
         narrowingQuery = narrowingQuery();
       _.extend(query, narrowingQuery)
     }
-    collection = collection._narrowingParent // XXX <- not sure if this is right
+    collection = collection._parentCollection
   }
 
   if (LocalCollection._selectorIsId(selector))
     selector = {_id: selector};
 
-  return _.extend({}, selector, query); // XXX <- not sure if this is right
+  return _.extend({}, selector, query);
 };
 
 /**
