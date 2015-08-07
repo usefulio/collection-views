@@ -39,8 +39,7 @@ _.each(Mongo.Collection.prototype, function (val, key) {
 Mongo.Collection.prototype.where = CollectionView.prototype.where = function (query) {
   var sourceCollection = this;
   var collectionView = new CollectionView(sourceCollection);
-  collectionView._narrowingQuery = {query: query}; // XXX this gets overwritten
-  collectionView._narrowingParent = sourceCollection;
+  collectionView._narrowingQuery = {query: query};
   return collectionView;
 };
 
@@ -68,7 +67,7 @@ LocalCollection._selectorIsIdPerhapsAsObject = function (selector) {
  */
 CollectionView.prototype._mutateSelector = function (selector, query) {
   var collection = this
-    , query = query || {}; // XXX <- not sure if this is right
+    , query = query || {};
 
   while (collection) {
     if (! _.isUndefined(collection._narrowingQuery)) {
@@ -78,13 +77,13 @@ CollectionView.prototype._mutateSelector = function (selector, query) {
         narrowingQuery = narrowingQuery();
       _.extend(query, narrowingQuery)
     }
-    collection = collection._narrowingParent // XXX <- not sure if this is right
+    collection = collection._parentCollection
   }
 
   if (LocalCollection._selectorIsId(selector))
     selector = {_id: selector};
 
-  return _.extend({}, selector, query); // XXX <- not sure if this is right
+  return _.extend({}, selector, query);
 };
 
 /**
