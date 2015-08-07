@@ -1,21 +1,4 @@
 /**
- * @summary A method which takes a single argument (a query or a function which returns a query)
- *          and returns a CollectionView
- * @locus Anywhere
- * @method where
- * @memberOf Mongo.Collection
- * @param {Object | Function} query A query object or function used to filter the results of a collection operation
- * @return {Object} The narrowed collection view object
- */
-Mongo.Collection.prototype.where = function (query) {
-  var sourceCollection = this;
-  var collectionView = new CollectionView(sourceCollection);
-  collectionView._narrowingQuery = {query: query}; // XXX this gets overwritten
-  collectionView._narrowingParent = sourceCollection;
-  return collectionView;
-};
-
-/**
  * @summary A CollectionView represents a filtered view of a Mongo.Collection
  * @instancename collectionView
  */
@@ -43,6 +26,23 @@ _.each(Mongo.Collection.prototype, function (val, key) {
     };
   }
 });
+
+/**
+ * @summary A method which takes a single argument (a query or a function which returns a query)
+ *          and returns a CollectionView
+ * @locus Anywhere
+ * @method where
+ * @memberOf Mongo.Collection
+ * @param {Object | Function} query A query object or function used to filter the results of a collection operation
+ * @return {Object} The narrowed collection view object
+ */
+Mongo.Collection.prototype.where = CollectionView.prototype.where = function (query) {
+  var sourceCollection = this;
+  var collectionView = new CollectionView(sourceCollection);
+  collectionView._narrowingQuery = {query: query}; // XXX this gets overwritten
+  collectionView._narrowingParent = sourceCollection;
+  return collectionView;
+};
 
 /**
  * @summary MONKEY PATCH! We modify the _selectorIsIdPerhapsAsObject to permit ids as part of a client
