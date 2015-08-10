@@ -58,7 +58,7 @@ CollectionView = function (sourceCollection) {
       var narrowingOptions = self._mutateOptions();
       _.each(narrowingOptions, function (val, argKey) {
         if (argKey == 'fields') {
-          console.warn('Passing a "fields" argument has not effect on the "' + key + '" method!');
+          console.warn('Passing a "fields" argument has no effect on the "' + key + '" method!');
         }
       });
 
