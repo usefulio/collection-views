@@ -45,11 +45,6 @@ CollectionView = function (sourceCollection) {
       selector = self._mutateSelector(selector);
       options = self._mutateOptions(options);
 
-      console.log(selector)
-      console.log(options)
-      console.log(callback)
-      console.log("==========================")
-
       return self._mongoCollection[key](selector, options, callback);
     };
   });
