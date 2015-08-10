@@ -254,6 +254,8 @@ Tinytest.add('where - upsert - t4 (no matches found, insert still works)', funct
   test.equal(result.numberAffected, 1);
   test.isNotUndefined(result.insertedId);
   test.isNotNull(result.insertedId);
+  test.isNotNull(result.insertedId);
+  test.equal(typeof result.insertedId, 'string');
 });
 
 function newCollection () {
