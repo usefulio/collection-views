@@ -258,6 +258,99 @@ Tinytest.add('where - upsert - t4 (no matches found, insert still works)', funct
   test.equal(typeof result.insertedId, 'string');
 });
 
+// Test if field specifiers work properly
+Tinytest.add('where - field specifiers - t1 (one specifier: only fetch the title)', function (test) {
+  var Books = newCollection();
+  var doc = Books
+    .where({ genre: 'science' }, { title: 1 })
+    .findOne({ kind: 'magazine' });
+  test.equal(doc.title, 'Science Magazine 1');
+  test.isNotUndefined(doc.title);
+  test.isUndefined(doc.genre);
+  test.isUndefined(doc.kind);
+  test.isUndefined(doc.catalogId);
+  test.isNotUndefined(doc._id);
+  test.isNotNull(doc._id);
+  test.equal(typeof doc._id, 'string');
+});
+
+Tinytest.add('where - field specifiers - t2 (two chained specifiers: only fetch the title and the kind)', function (test) {
+  var Books = newCollection();
+  var doc = Books
+    .where({}, { title: 1 })
+    .where({ genre: 'science' }, { kind: 1 })
+    .findOne({ kind: 'magazine' });
+  test.equal(doc.title, 'Science Magazine 1');
+  test.isNotUndefined(doc.title);
+  test.isUndefined(doc.genre);
+  test.isNotUndefined(doc.kind);
+  test.isUndefined(doc.catalogId);
+  test.isNotUndefined(doc._id);
+  test.isNotNull(doc._id);
+  test.equal(typeof doc._id, 'string');
+});
+
+Tinytest.add('where - field specifiers - t3 (one specifier: remove the title)', function (test) {
+  var Books = newCollection();
+  var doc = Books
+    .where({ genre: 'science' }, { title: 0 })
+    .findOne({ kind: 'magazine' });
+  test.isUndefined(doc.title);
+  test.isNotUndefined(doc.genre);
+  test.isNotUndefined(doc.kind);
+  test.isNotUndefined(doc.catalogId);
+  test.isNotUndefined(doc._id);
+  test.isNotNull(doc._id);
+  test.equal(typeof doc._id, 'string');
+});
+
+Tinytest.add('where - field specifiers - t4 (two specifier: remove the kind and catalogId)', function (test) {
+  var Books = newCollection();
+  var doc = Books
+    .where({ genre: 'science' }, { kind: 0 })
+    .where({}, { catalogId: 0 })
+    .findOne({ kind: 'magazine' });
+  test.isNotUndefined(doc.title);
+  test.isNotUndefined(doc.genre);
+  test.isUndefined(doc.kind);
+  test.isUndefined(doc.catalogId);
+  test.isNotUndefined(doc._id);
+  test.isNotNull(doc._id);
+  test.equal(typeof doc._id, 'string');
+});
+
+Tinytest.add('where - field specifiers - t5 (two specifiers: only fetch the title)', function (test) {
+  var Books = newCollection();
+  var doc = Books
+    .where({ genre: 'science' }, { catalogId: 0 })
+    .where({}, { title: 1 })
+    .findOne({ kind: 'magazine' });
+  test.equal(doc.title, 'Science Magazine 1');
+  test.isNotUndefined(doc.title);
+  test.isUndefined(doc.genre);
+  test.isUndefined(doc.kind);
+  test.isUndefined(doc.catalogId);
+  test.isNotUndefined(doc._id);
+  test.isNotNull(doc._id);
+  test.equal(typeof doc._id, 'string');
+});
+
+Tinytest.add('where - field specifiers - t5 (two specifiers: only fetch the title and genre)', function (test) {
+  var Books = newCollection();
+  var doc = Books
+    .where({ genre: 'science' }, { genre: 1 })
+    .where({}, { title: 1 })
+    .findOne({ kind: 'magazine' });
+  test.equal(doc.title, 'Science Magazine 1');
+  test.isNotUndefined(doc.title);
+  test.isNotUndefined(doc.genre);
+  test.isUndefined(doc.kind);
+  test.isUndefined(doc.catalogId);
+  test.isNotUndefined(doc._id);
+  test.isNotNull(doc._id);
+  test.equal(typeof doc._id, 'string');
+});
+
 function newCollection () {
   var Books = new Mongo.Collection(null);
   Books.remove({});
