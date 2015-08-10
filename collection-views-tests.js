@@ -134,10 +134,15 @@ Tinytest.add('where - update - t5 (lazy resolving when argument is function)', f
     .fetch();
   test.length(docs, 1);
 
-  var affectedCount = Books.where(function () {
-    var query = { genre: 'science' };
-    return query;
-  }).update({}, 
+  var expected;
+  var narrowedCollection = Books.where(function () {
+    return {genre: expected}
+  });
+  test.equal(narrowedCollection.find().count(), 0);
+  expected = 'science';
+  test.equal(narrowedCollection.find().count(), 2);
+
+  var affectedCount = narrowedCollection.update({}, 
     { $set: { kind: 'magazine' } }
     , { multi: true }
   );
