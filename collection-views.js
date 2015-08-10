@@ -71,7 +71,8 @@ Mongo.Collection.prototype.where = CollectionView.prototype.where = function (qu
   var sourceCollection = this;
   var collectionView = new CollectionView(sourceCollection);
   collectionView._narrowingQuery = { query: query };
-  collectionView._narrowingOptions = { fields: fields };
+  if (! _.isUndefined(fields))
+    collectionView._narrowingOptions = { fields: fields };
   return collectionView;
 };
 
@@ -133,8 +134,14 @@ CollectionView.prototype._mutateOptions = function (options) {
 
   while (collection) {
     if (! _.isUndefined(collection._narrowingOptions)) {
-      _.extend(options, collection._narrowingOptions);
+      _.each(collection._narrowingOptions, function (val, key) {
+        if (! _.isUndefined(options[key]))
+          _.extend(options[key], val);
+        else
+          options[key] = val;
+      });
     }
+    
     collection = collection._parentCollection;
   }
 
