@@ -17,11 +17,10 @@ CollectionView = function (sourceCollection) {
   // We want users to be able to treat this as an ordinary mongo collection
   // so here we attach all the Mongo.Collection.prototype methods
   _.each(Mongo.Collection.prototype, function (val, key) {
-    // XXX Find a more elegant way to exclude 'where'
-    if (typeof val === "function" && key !== 'where') {
+    if (! _.has(CollectionView.prototype, key)) {
       self[key] = function () {
         return self._mongoCollection[key].apply(self._mongoCollection, arguments);
-      };
+      }
     }
   });
 
