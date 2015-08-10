@@ -53,6 +53,15 @@ CollectionView = function (sourceCollection) {
     self[key] = function (selector) {
       var args = _.toArray(arguments);
       args[0] = self._mutateSelector(selector);
+
+      // Warn the developer if field specifier is detected
+      var narrowingOptions = self._mutateOptions();
+      _.each(narrowingOptions, function (val, argKey) {
+        if (argKey == 'fields') {
+          console.warn('Passing a "fields" argument has not effect on the "' + key + '" method!');
+        }
+      });
+
       return self._mongoCollection[key].apply(self._mongoCollection, args);
     };
   });
