@@ -154,5 +154,19 @@ CollectionView.prototype._mutateOptions = function (options) {
     collection = collection._parentCollection;
   }
 
+  // mix including and excluding fields
+  var removeExcludingFields = !! _.find(options.fields, function(val, key) {
+    if (val === 1) {
+      return true;
+    }
+  });
+
+  if (removeExcludingFields) {
+    _.each(options.fields, function (val, key) {
+      if (val === 0)
+        delete options.fields[key];
+    });
+  }
+
   return options;
 };
