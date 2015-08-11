@@ -258,116 +258,222 @@ Tinytest.add('CollectionViews - upsert - t4 (no matches found, insert still work
   test.equal(typeof result.insertedId, 'string');
 });
 
-// Test if field specifiers work properly
-Tinytest.add('CollectionViews - field specifiers - t1 (one specifier: only fetch the title)', function (test) {
-  var Books = newCollection();
-  var doc = Books
-    .where({ genre: 'science' }, { title: 1 })
-    .findOne({ kind: 'magazine' });
-  test.equal(doc.title, 'Science Magazine 1');
-  test.isNotUndefined(doc.title);
-  test.isUndefined(doc.genre);
-  test.isUndefined(doc.kind);
-  test.isUndefined(doc.catalogId);
-  test.isNotUndefined(doc._id);
-  test.isNotNull(doc._id);
-  test.equal(typeof doc._id, 'string');
+Tinytest.add('CollectionViews - field specifier - narrows the set of fields returned by a query', function (test) {
+  var books = newCollection();
+  var result = books.where({}, {
+    fields: {
+      catalogId: 0
+    }
+  }).findOne();
+  test.isUndefined(result.catalogId,
+    'findOne returns an object without the excluded catalogId');
+  test.equal(result, _.omit(books.findOne(result._id), 'catalogId'),
+    "findOne returns an object which otherwise matches the original object");
+
+  result = books.where({}, {
+    fields: {
+      catalogId: 0
+      , genre: 0
+    }
+  }).findOne();
+  test.isUndefined(result.catalogId,
+    'findOne returns an object without the excluded catalogId');
+  test.isUndefined(result.genre,
+    'findOne returns an object without the excluded genre');
+  test.equal(result, _.omit(books.findOne(result._id), 'catalogId', 'genre'),
+    "findOne returns an object which otherwise matches the original object");
+
+  result = books.where({}, {
+    fields: {
+      catalogId: 1
+      , genre: 1
+    }
+  }).findOne();
+  test.isNotUndefined(result.catalogId,
+    'findOne returns an object with the included catalogId');
+  test.isNotUndefined(result.genre,
+    'findOne returns an object with the included genre');
+  test.equal(result, _.pick(books.findOne(result._id), '_id', 'catalogId', 'genre'),
+    "findOne returns an object which includes only the included fields");
+
+  result = books.where({}, {
+    fields: {
+      catalogId: 0
+      , genre: 1
+    }
+  }).findOne();
+  test.isUndefined(result.catalogId,
+    'findOne returns an object without the excluded catalogId');
+  test.isNotUndefined(result.genre,
+    'findOne returns an object with the included genre');
+  test.equal(result, _.pick(books.findOne(result._id), '_id', 'genre'),
+    "findOne returns an object with only the included field");
 });
 
-Tinytest.add('CollectionViews - field specifiers - t2 (two chained specifiers: only fetch the _id)', function (test) {
-  var Books = newCollection();
-  var doc = Books
-    .where({}, { title: 1 })
-    .where({ genre: 'science' }, { kind: 1 })
-    .findOne({ kind: 'magazine' });
-  test.isUndefined(doc.title);
-  test.isUndefined(doc.genre);
-  test.isUndefined(doc.kind);
-  test.isUndefined(doc.catalogId);
-  test.isNotUndefined(doc._id);
-  test.isNotNull(doc._id);
-  test.equal(typeof doc._id, 'string');
+Tinytest.add('CollectionViews - field specifier - find and findOne field specifiers are narrowed', function (test) {
+  var books = newCollection();
+  var result = books.where({}, {
+    fields: {
+      catalogId: 0
+    }
+  }).findOne({}, {
+    fields: {
+      genre: 0
+    }
+  });
+  test.isUndefined(result.catalogId,
+    'findOne returns an object without the excluded catalogId');
+  test.isUndefined(result.genre,
+    'findOne returns an object without the excluded genre');
+  test.equal(result, _.omit(books.findOne(result._id), 'catalogId', 'genre'),
+    "findOne returns an object which otherwise matches the original object");
+
+  result = books.where({}, {
+    fields: {
+      catalogId: 0
+    }
+  }).find({}, {
+    fields: {
+      genre: 0
+    }
+  }).fetch();
+  test.equal(result, books.find({}, { fields: {
+    genre: 0
+    , catalogId: 0
+  }}).fetch(),
+    "narrowed find results are identical to a call to find with equivilent field specifier");
+
+  result = books.where({}, {
+    fields: {
+      catalogId: 1
+    }
+  }).findOne({}, {
+    fields: {
+      genre: 1
+    }
+  });
+  test.isUndefined(result.catalogId,
+    'findOne returns an object without the included catalogId');
+  test.isUndefined(result.genre,
+    'findOne returns an object without the included genre');
+  test.equal(result, {_id: result._id},
+    "findOne returns an object which has been stripped of all fields");
+
+  result = books.where({}, {
+    fields: {
+      catalogId: 1
+    }
+  }).find({}, {
+    fields: {
+      genre: 1
+    }
+  }).fetch();
+  test.equal(result, books.find({}, { fields: {
+    _id: 1
+  }}).fetch(),
+    "narrowed find results are identical to a call to find with equivilent field specifier");
 });
 
-Tinytest.add('CollectionViews - field specifiers - t3 (one specifier: remove the title)', function (test) {
-  var Books = newCollection();
-  var doc = Books
-    .where({ genre: 'science' }, { title: 0 })
-    .findOne({ kind: 'magazine' });
-  test.isUndefined(doc.title);
-  test.isNotUndefined(doc.genre);
-  test.isNotUndefined(doc.kind);
-  test.isNotUndefined(doc.catalogId);
-  test.isNotUndefined(doc._id);
-  test.isNotNull(doc._id);
-  test.equal(typeof doc._id, 'string');
+Tinytest.add('CollectionViews - field specifier - subsequent calls to where continue to narrow the collection', function (test) {
+  var books = newCollection();
+  var result = books.where({}, {
+    fields: {
+      catalogId: 0
+    }
+  }).where({}, {
+    fields: {
+      genre: 0
+    }
+  }).findOne();
+  test.isUndefined(result.catalogId,
+    'findOne returns an object without the excluded catalogId');
+  test.isUndefined(result.genre,
+    'findOne returns an object without the excluded genre');
+  test.equal(result, _.omit(books.findOne(result._id), 'catalogId', 'genre'),
+    "findOne returns an object which otherwise matches the original object");
+
+  result = books.where({}, {
+    fields: {
+      catalogId: 0
+    }
+  }).where({}, {
+    fields: {
+      genre: 0
+    }
+  }).find().fetch();
+  test.equal(result, books.find({}, { fields: {
+    genre: 0
+    , catalogId: 0
+  }}).fetch(),
+    "narrowed find results are identical to a call to find with equivilent field specifier");
+
+  result = books.where({}, {
+    fields: {
+      catalogId: 1
+    }
+  }).where({}, {
+    fields: {
+      genre: 1
+    }
+  }).findOne();
+  test.isUndefined(result.catalogId,
+    'findOne returns an object without the included catalogId');
+  test.isUndefined(result.genre,
+    'findOne returns an object without the included genre');
+  test.equal(result, {_id: result._id},
+    "findOne returns an object which has been stripped of all fields");
+
+  result = books.where({}, {
+    fields: {
+      catalogId: 1
+    }
+  }).where({}, {
+    fields: {
+      genre: 1
+    }
+  }).find().fetch();
+  test.equal(result, books.find({}, { fields: {
+    _id: 1
+  }}).fetch(),
+    "narrowed find results are identical to a call to find with equivilent field specifier");
 });
 
-Tinytest.add('CollectionViews - field specifiers - t4 (two specifier: remove the kind and genre)', function (test) {
-  var Books = newCollection();
-  var hideKindAndGenre = Books.where({}, { kind: 0 }).where({}, { genre: 0 });
-  test.equal(hideKindAndGenre.find().count(), Books.find().count());
-  test.isUndefined(hideKindAndGenre.findOne().kind);
-  test.isUndefined(hideKindAndGenre.findOne().genre);
-  var book = Books.findOne();
-  test.equal(hideKindAndGenre.findOne(book._id), _.omit(book, 'kind', 'genre'));
+Tinytest.add('CollectionViews - field specifier - correctly handles super complex set of field specifiers', function (test) {
+  var books = newCollection();
+  var result = books.where({}, {
+    fields: {
+      catalogId: 1
+      , genre: 1
+      , kind: 1
+      , title: 1
+    }
+  }).where({}, {
+    fields: {
+      catalogId: 0
+    }
+  }).findOne({}, {
+    fields: {
+      genre: 1
+      , title: 1
+      , catalogId: 1
+      , kind: 0
+    }
+  });
+  test.equal(result, _.pick(books.findOne(result._id), '_id', 'title', 'genre'),
+    "findOne returns an object which otherwise matches the original object");
 });
 
-Tinytest.add('CollectionViews - field specifiers - t5 (two specifiers: only fetch the title)', function (test) {
-  var Books = newCollection();
-  var doc = Books
-    .where({ genre: 'science' }, { catalogId: 0 })
-    .where({}, { title: 1 })
-    .findOne({ kind: 'magazine' });
-  test.equal(doc.title, 'Science Magazine 1');
-  test.isNotUndefined(doc.title);
-  test.isUndefined(doc.genre);
-  test.isUndefined(doc.kind);
-  test.isUndefined(doc.catalogId);
-  test.isNotUndefined(doc._id);
-  test.isNotNull(doc._id);
-  test.equal(typeof doc._id, 'string');
-});
-
-Tinytest.add('CollectionViews - field specifiers - t6 (two specifiers: the second one must override the first)', function (test) {
-  var Books = newCollection();
-  var doc = Books
-    .where({}, { genre: 1, title: 1 })
-    .where({}, { genre: 1 })
-    .findOne({ kind: 'magazine' });
-  test.isUndefined(doc.title);
-  test.isNotUndefined(doc.genre);
-  test.isUndefined(doc.kind);
-  test.isUndefined(doc.catalogId);
-  test.isNotUndefined(doc._id);
-  test.isNotNull(doc._id);
-  test.equal(typeof doc._id, 'string');
-});
-
-Tinytest.add('CollectionViews - field specifiers - t7 (two specifiers: the second one is passed to findOne)', function (test) {
-  var Books = newCollection();
-  var hideKindAndGenre = Books.where({}, { kind: 0 }).where();
-  test.equal(hideKindAndGenre.find({}, { fields: { genre: 0 } }).count(), Books.find().count());
-  test.isUndefined(hideKindAndGenre.findOne({}, { fields: { genre: 0 } }).kind);
-  test.isUndefined(hideKindAndGenre.findOne({}, { fields: { title: 0 } }).title);
-  var book = Books.findOne({}, { fields: { catalogId: 0 } });
-  test.equal(hideKindAndGenre.findOne(book._id, { fields: { catalogId: 0 } }), _.omit(book, 'kind', 'catalogId'));
-
-});
-
-Tinytest.add('CollectionViews - field specifiers - t8 (two specifiers: the second one is passed to find)', function (test) {
-  var Books = newCollection();
-  var docs = Books
-    .where({}, { genre: 1 })
-    .find({ kind: 'magazine' }, { fields: { genre: 1, title: 1 } })
-    .fetch();
-  test.isUndefined(docs[0].title);
-  test.isNotUndefined(docs[0].genre);
-  test.isUndefined(docs[0].kind);
-  test.isUndefined(docs[0].catalogId);
-  test.isNotUndefined(docs[0]._id);
-  test.isNotNull(docs[0]._id);
-  test.equal(typeof docs[0]._id, 'string');
+Tinytest.add('CollectionViews - field specifier - works with a query specifier', function (test) {
+  var books = newCollection();
+  var result = books.where({
+    genre: 'fiction'
+  }, {
+    fields: {
+      catalogId: 1
+    }
+  }).find().fetch();
+  test.equal(result, books.find({genre: 'fiction'}, {fields: { catalogId: 1 }}).fetch(),
+    "narrowed find results match equivilent find operation");
 });
 
 function newCollection () {

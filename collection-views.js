@@ -76,12 +76,12 @@ CollectionView = function (sourceCollection) {
  * @param {Object | Function} query A query object or function used to filter the results of a collection operation
  * @return {Object} The narrowed collection view object
  */
-Mongo.Collection.prototype.where = CollectionView.prototype.where = function (query, fields) {
+Mongo.Collection.prototype.where = CollectionView.prototype.where = function (query, options) {
   var sourceCollection = this;
   var collectionView = new CollectionView(sourceCollection);
   collectionView._narrowingQuery = { query: query };
-  if (! _.isUndefined(fields))
-    collectionView._narrowingOptions = { fields: fields };
+  if (! _.isUndefined(options))
+    collectionView._narrowingOptions = options;
   return collectionView;
 };
 
@@ -181,7 +181,10 @@ CollectionView.prototype._mutateOptions = function (options) {
     });
   }
 
-  // The fields have been narrowed to only show the _id; this must be set explicitly
+  // The fields have been narrowed completely, however meteor/mongo treat an
+  // empty fields object as explicitly allowing everything, so we should
+  // explicitly set the _id field to 1 to signal meteor/mongo to return only
+  // the id field.
   if (narrowedFields && _.isEmpty(options.fields))
     options.fields = { _id: 1 }
 
