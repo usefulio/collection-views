@@ -1,32 +1,32 @@
 // findOne() should only return documents which match both queries
-Tinytest.add('where - findOne - t1', function (test) {
+Tinytest.add('CollectionViews - findOne - t1', function (test) {
   var Books = newCollection();
   var doc = Books.where({ kind: 'book' }).findOne({ genre: 'fiction' });
   test.matches(doc.title, /Fiction Book/);
 });
 
-Tinytest.add('where - findOne - t2', function (test) {
+Tinytest.add('CollectionViews - findOne - t2', function (test) {
   var Books = newCollection();
   var doc = Books.where({ genre: 'science' }).findOne({ kind: 'magazine' });
   test.equal(doc.title, 'Science Magazine 1');
 });
 
 // find() should only return documents which match both queries
-Tinytest.add('where - find - t1', function (test) {
+Tinytest.add('CollectionViews - find - t1', function (test) {
   var Books = newCollection();
   var docs = Books.where({ kind: 'book' }).find({ genre: 'fiction' }).fetch();
   test.equal(_.pluck(docs, 'title'), ['Fiction Book 1', 'Fiction Book 2'])
   test.length(docs, 2);
 });
 
-Tinytest.add('where - find - t2', function (test) {
+Tinytest.add('CollectionViews - find - t2', function (test) {
   var Books = newCollection();
   var docs = Books.where({ genre: 'science' }).find({}).fetch();
   test.equal(_.pluck(docs, 'title'), ['Science Book 1', 'Science Magazine 1'])
   test.length(docs, 2);
 });
 
-Tinytest.add('where - find - t3 (query can be a function)', function (test) {
+Tinytest.add('CollectionViews - find - t3 (query can be a function)', function (test) {
   var Books = newCollection();
   var docs = Books.where(function () {
     return { kind: 'book' }
@@ -35,7 +35,7 @@ Tinytest.add('where - find - t3 (query can be a function)', function (test) {
   test.length(docs, 2);
 });
 
-Tinytest.add('where - find - t4 (chaining 2 where methods)', function (test) {
+Tinytest.add('CollectionViews - find - t4 (chaining 2 where methods)', function (test) {
   var Books = newCollection();
   var docs = Books
     .where({ kind: 'book' })
@@ -46,7 +46,7 @@ Tinytest.add('where - find - t4 (chaining 2 where methods)', function (test) {
   test.length(docs, 2);
 });
 
-Tinytest.add('where - find - t5 (chaining 3 where methods)', function (test) {
+Tinytest.add('CollectionViews - find - t5 (chaining 3 where methods)', function (test) {
   var Books = newCollection();
   var docs = Books
     .where({ kind: 'leaflet' })
@@ -58,7 +58,7 @@ Tinytest.add('where - find - t5 (chaining 3 where methods)', function (test) {
   test.length(docs, 1);
 });
 
-Tinytest.add('where - find - t6 (chaining 2 where methods with find query)', function (test) {
+Tinytest.add('CollectionViews - find - t6 (chaining 2 where methods with find query)', function (test) {
   var Books = newCollection();
   var docs = Books
     .where({ kind: 'leaflet' })
@@ -70,7 +70,7 @@ Tinytest.add('where - find - t6 (chaining 2 where methods with find query)', fun
 });
 
 // update() should only affect documents which match both queries
-Tinytest.add('where - update - t1', function (test) {
+Tinytest.add('CollectionViews - update - t1', function (test) {
   var Books = newCollection();
   var affectedCount = Books.where({ kind: 'book' }).update({}, 
     { $set: { catalogId: 1 } }
@@ -79,7 +79,7 @@ Tinytest.add('where - update - t1', function (test) {
   test.equal(affectedCount, 3);
 });
 
-Tinytest.add('where - update - t2', function (test) {
+Tinytest.add('CollectionViews - update - t2', function (test) {
   var Books = newCollection();
   var affectedCount = Books.where({ genre: 'fiction' }).update({ kind: 'book' }, 
     { $set: { catalogId: 1 } }
@@ -88,7 +88,7 @@ Tinytest.add('where - update - t2', function (test) {
   test.equal(affectedCount, 2);
 });
 
-Tinytest.add('where - update - t3', function (test) {
+Tinytest.add('CollectionViews - update - t3', function (test) {
   var Books = newCollection();
   var docs = Books.where({ genre: 'science', kind: 'magazine' }).find({}).fetch();
   test.length(docs, 1);
@@ -103,7 +103,7 @@ Tinytest.add('where - update - t3', function (test) {
   test.length(docs, 0);
 });
 
-Tinytest.add('where - update - t4 (chaining where methods)', function (test) {
+Tinytest.add('CollectionViews - update - t4 (chaining where methods)', function (test) {
   var Books = newCollection();
   var docs = Books
     .where({ genre: 'science' })
@@ -125,7 +125,7 @@ Tinytest.add('where - update - t4 (chaining where methods)', function (test) {
   test.length(docs, 2);
 });
 
-Tinytest.add('where - update - t5 (lazy resolving when argument is function)', function (test) {
+Tinytest.add('CollectionViews - update - t5 (lazy resolving when argument is function)', function (test) {
   var Books = newCollection();
   var docs = Books
     .where({ genre: 'science' })
@@ -156,7 +156,7 @@ Tinytest.add('where - update - t5 (lazy resolving when argument is function)', f
 });
 
 // remove() should only affect documents which match both queries
-Tinytest.add('where - remove - t1', function (test) {
+Tinytest.add('CollectionViews - remove - t1', function (test) {
   var Books = newCollection();
   var docs = Books.where({ genre: 'removable' }).find({}).fetch();
   test.length(docs, 4);
@@ -168,7 +168,7 @@ Tinytest.add('where - remove - t1', function (test) {
   test.length(docs, 2);
 });
 
-Tinytest.add('where - remove - t2 (chaining where methods)', function (test) {
+Tinytest.add('CollectionViews - remove - t2 (chaining where methods)', function (test) {
   var Books = newCollection();
   var docs = Books.where({ genre: 'cooking' }).find({}).fetch();
   test.length(docs, 3);
@@ -184,7 +184,7 @@ Tinytest.add('where - remove - t2 (chaining where methods)', function (test) {
   test.length(docs, 2);
 });
 
-Tinytest.add('where - remove - t3 (lazy resolving when argument is function)', function (test) {
+Tinytest.add('CollectionViews - remove - t3 (lazy resolving when argument is function)', function (test) {
   var Books = newCollection();
   var docs = Books.where({ genre: 'cooking' }).find({}).fetch();
   test.length(docs, 3);
@@ -206,7 +206,7 @@ Tinytest.add('where - remove - t3 (lazy resolving when argument is function)', f
 });
 
 // upsert() should only affect documents which match both queries
-Tinytest.add('where - upsert - t1', function (test) {
+Tinytest.add('CollectionViews - upsert - t1', function (test) {
   var Books = newCollection();
   var result = Books.where({ kind: 'magazine' }).upsert({}, 
     { $set: { catalogId: 1 } }
@@ -215,7 +215,7 @@ Tinytest.add('where - upsert - t1', function (test) {
   test.equal(result.numberAffected, 2);
 });
 
-Tinytest.add('where - upsert - t2 (chainable where methods)', function (test) {
+Tinytest.add('CollectionViews - upsert - t2 (chainable where methods)', function (test) {
   var Books = newCollection();
   var result = Books
     .where({ kind: 'book' })
@@ -227,7 +227,7 @@ Tinytest.add('where - upsert - t2 (chainable where methods)', function (test) {
   test.equal(result.numberAffected, 2);
 });
 
-Tinytest.add('where - upsert - t3 (lazy resolving when argument is function)', function (test) {
+Tinytest.add('CollectionViews - upsert - t3 (lazy resolving when argument is function)', function (test) {
   var Books = newCollection();
   var result = Books
     .where(function () {
@@ -243,7 +243,7 @@ Tinytest.add('where - upsert - t3 (lazy resolving when argument is function)', f
   test.equal(result.numberAffected, 1);
 });
 
-Tinytest.add('where - upsert - t4 (no matches found, insert still works)', function (test) {
+Tinytest.add('CollectionViews - upsert - t4 (no matches found, insert still works)', function (test) {
   var Books = newCollection();
   var result = Books
     .where({ kind: 'impossible' })
@@ -259,7 +259,7 @@ Tinytest.add('where - upsert - t4 (no matches found, insert still works)', funct
 });
 
 // Test if field specifiers work properly
-Tinytest.add('where - field specifiers - t1 (one specifier: only fetch the title)', function (test) {
+Tinytest.add('CollectionViews - field specifiers - t1 (one specifier: only fetch the title)', function (test) {
   var Books = newCollection();
   var doc = Books
     .where({ genre: 'science' }, { title: 1 })
@@ -274,23 +274,22 @@ Tinytest.add('where - field specifiers - t1 (one specifier: only fetch the title
   test.equal(typeof doc._id, 'string');
 });
 
-Tinytest.add('where - field specifiers - t2 (two chained specifiers: only fetch the title and the kind)', function (test) {
+Tinytest.add('CollectionViews - field specifiers - t2 (two chained specifiers: only fetch the _id)', function (test) {
   var Books = newCollection();
   var doc = Books
     .where({}, { title: 1 })
     .where({ genre: 'science' }, { kind: 1 })
     .findOne({ kind: 'magazine' });
-  test.equal(doc.title, 'Science Magazine 1');
-  test.isNotUndefined(doc.title);
+  test.isUndefined(doc.title);
   test.isUndefined(doc.genre);
-  test.isNotUndefined(doc.kind);
+  test.isUndefined(doc.kind);
   test.isUndefined(doc.catalogId);
   test.isNotUndefined(doc._id);
   test.isNotNull(doc._id);
   test.equal(typeof doc._id, 'string');
 });
 
-Tinytest.add('where - field specifiers - t3 (one specifier: remove the title)', function (test) {
+Tinytest.add('CollectionViews - field specifiers - t3 (one specifier: remove the title)', function (test) {
   var Books = newCollection();
   var doc = Books
     .where({ genre: 'science' }, { title: 0 })
@@ -304,22 +303,17 @@ Tinytest.add('where - field specifiers - t3 (one specifier: remove the title)', 
   test.equal(typeof doc._id, 'string');
 });
 
-Tinytest.add('where - field specifiers - t4 (two specifier: remove the kind and catalogId)', function (test) {
+Tinytest.add('CollectionViews - field specifiers - t4 (two specifier: remove the kind and genre)', function (test) {
   var Books = newCollection();
-  var doc = Books
-    .where({ genre: 'science' }, { kind: 0 })
-    .where({}, { catalogId: 0 })
-    .findOne({ kind: 'magazine' });
-  test.isNotUndefined(doc.title);
-  test.isNotUndefined(doc.genre);
-  test.isUndefined(doc.kind);
-  test.isUndefined(doc.catalogId);
-  test.isNotUndefined(doc._id);
-  test.isNotNull(doc._id);
-  test.equal(typeof doc._id, 'string');
+  var hideKindAndGenre = Books.where({}, { kind: 0 }).where({}, { genre: 0 });
+  test.equal(hideKindAndGenre.find().count(), Books.find().count());
+  test.isUndefined(hideKindAndGenre.findOne().kind);
+  test.isUndefined(hideKindAndGenre.findOne().genre);
+  var book = Books.findOne();
+  test.equal(hideKindAndGenre.findOne(book._id), _.omit(book, 'kind', 'genre'));
 });
 
-Tinytest.add('where - field specifiers - t5 (two specifiers: only fetch the title)', function (test) {
+Tinytest.add('CollectionViews - field specifiers - t5 (two specifiers: only fetch the title)', function (test) {
   var Books = newCollection();
   var doc = Books
     .where({ genre: 'science' }, { catalogId: 0 })
@@ -335,20 +329,45 @@ Tinytest.add('where - field specifiers - t5 (two specifiers: only fetch the titl
   test.equal(typeof doc._id, 'string');
 });
 
-Tinytest.add('where - field specifiers - t5 (two specifiers: only fetch the title and genre)', function (test) {
+Tinytest.add('CollectionViews - field specifiers - t6 (two specifiers: the second one must override the first)', function (test) {
   var Books = newCollection();
   var doc = Books
-    .where({ genre: 'science' }, { genre: 1 })
-    .where({}, { title: 1 })
+    .where({}, { genre: 1, title: 1 })
+    .where({}, { genre: 1 })
     .findOne({ kind: 'magazine' });
-  test.equal(doc.title, 'Science Magazine 1');
-  test.isNotUndefined(doc.title);
+  test.isUndefined(doc.title);
   test.isNotUndefined(doc.genre);
   test.isUndefined(doc.kind);
   test.isUndefined(doc.catalogId);
   test.isNotUndefined(doc._id);
   test.isNotNull(doc._id);
   test.equal(typeof doc._id, 'string');
+});
+
+Tinytest.add('CollectionViews - field specifiers - t7 (two specifiers: the second one is passed to findOne)', function (test) {
+  var Books = newCollection();
+  var hideKindAndGenre = Books.where({}, { kind: 0 }).where();
+  test.equal(hideKindAndGenre.find({}, { fields: { genre: 0 } }).count(), Books.find().count());
+  test.isUndefined(hideKindAndGenre.findOne({}, { fields: { genre: 0 } }).kind);
+  test.isUndefined(hideKindAndGenre.findOne({}, { fields: { title: 0 } }).title);
+  var book = Books.findOne({}, { fields: { catalogId: 0 } });
+  test.equal(hideKindAndGenre.findOne(book._id, { fields: { catalogId: 0 } }), _.omit(book, 'kind', 'catalogId'));
+
+});
+
+Tinytest.add('CollectionViews - field specifiers - t8 (two specifiers: the second one is passed to find)', function (test) {
+  var Books = newCollection();
+  var docs = Books
+    .where({}, { genre: 1 })
+    .find({ kind: 'magazine' }, { fields: { genre: 1, title: 1 } })
+    .fetch();
+  test.isUndefined(docs[0].title);
+  test.isNotUndefined(docs[0].genre);
+  test.isUndefined(docs[0].kind);
+  test.isUndefined(docs[0].catalogId);
+  test.isNotUndefined(docs[0]._id);
+  test.isNotNull(docs[0]._id);
+  test.equal(typeof docs[0]._id, 'string');
 });
 
 function newCollection () {
