@@ -139,34 +139,71 @@ CollectionView.prototype._mutateSelector = function (selector, query) {
  */
 CollectionView.prototype._mutateOptions = function (options) {
   var collection = this
-    , options = options || {};
+    , options = options || {}
+    , narrowedFields = false;
 
   while (collection) {
     if (! _.isUndefined(collection._narrowingOptions)) {
-      _.each(collection._narrowingOptions, function (val, key) {
-        if (! _.isUndefined(options[key]))
-          _.extend(options[key], val);
-        else
-          options[key] = val;
-      });
+      if (! _.isUndefined(options.fields)) {
+        var innerFields = options.fields;
+        var outerFields = collection._narrowingOptions.fields;
+        var remainingFields = {};
+        _.each(innerFields, function (a, key) {
+          if (a == 1 && (! _.any(outerFields, isOne) || outerFields[key] == 1)) {
+            remainingFields[key] = a;
+          } else if (a == 0) {
+            remainingFields[key] = a;
+          }
+        });
+        _.each(outerFields, function (a, key) {
+          if (a == 1 && (! _.any(innerFields, isOne) || innerFields[key] == 1)) {
+            remainingFields[key] = a;
+          } else if (a == 0) {
+            remainingFields[key] = a;
+          }
+        });
+        options.fields = remainingFields;
+        
+        // Store the info that the options.fields have been narrowed
+        if ((_.size(innerFields) + _.size(outerFields)) > _.size(remainingFields))
+          narrowedFields = true;
+      } else
+        options.fields = collection._narrowingOptions.fields;
     }
-    
     collection = collection._parentCollection;
   }
 
   // mix including and excluding fields
-  var removeExcludingFields = !! _.find(options.fields, function(val, key) {
-    if (val === 1) {
-      return true;
-    }
-  });
-
-  if (removeExcludingFields) {
+  if (_.any(options.fields, isOne)) {
     _.each(options.fields, function (val, key) {
       if (val === 0)
         delete options.fields[key];
     });
   }
 
+  // The fields have been narrowed to only show the _id; this must be set explicitly
+  if (narrowedFields && _.isEmpty(options.fields))
+    options.fields = { _id: 1 }
+
   return options;
 };
+
+/**
+ * @summary Underscore predicate; checks if value is 1
+ * @locus Anywhere
+ * @param {Number} value The input value
+ * @return {Boolean} True if value is 1
+ */
+function isOne (value) {
+  return value === 1;
+}
+
+/**
+ * @summary Underscore predicate; checks if value is 0
+ * @locus Anywhere
+ * @param {Number} value The input value
+ * @return {Boolean} True if value is 0
+ */
+function isZero (value) {
+  return value === 0;
+}
