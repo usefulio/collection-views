@@ -41,9 +41,9 @@ CollectionView = function (sourceCollection) {
     };
   });
 
-  self.publish = function (name, query) {
-    self._mongoCollection._selector = self._mutateSelector(self._mongoCollection._selector);
-    return self._mongoCollection.publish.apply(self._mongoCollection, arguments);
+  self.publish = function (name, query, options) {
+    self._mongoCollection._selector = self._mutateSelector(self._mongoCollection._selector, query);
+    return self._mongoCollection.publish.apply(self._mongoCollection, [name, query, options]);
   }
 }
 
