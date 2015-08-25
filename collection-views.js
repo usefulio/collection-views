@@ -40,6 +40,11 @@ CollectionView = function (sourceCollection) {
       return self._mongoCollection[key].apply(self._mongoCollection, args);
     };
   });
+
+  self.publish = function (name, query) {
+    self._mongoCollection._selector = self._mutateSelector(self._mongoCollection._selector);
+    return self._mongoCollection.publish.apply(self._mongoCollection, arguments);
+  }
 }
 
 /**
@@ -99,4 +104,20 @@ CollectionView.prototype._mutateSelector = function (selector, query) {
     selector = {_id: selector};
 
   return _.extend({}, selector, query);
+};
+
+/**
+ * @summary Publishes collection data
+ * @locus Anywhere
+ * @method publish
+ * @memberOf Mongo.Collection
+ * @param {String} name A name for the published data set
+ * @param {Object | Function} query A query object or function used to filter the results of a collection operation
+ */
+Mongo.Collection.prototype.publish = function (name, query) {
+  var self = this
+    , query = query || {};
+  Meteor.publish(name, function(){
+      return self.find(_.extend(query, self._selector));
+  });
 };
