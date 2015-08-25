@@ -114,10 +114,10 @@ CollectionView.prototype._mutateSelector = function (selector, query) {
  * @param {String} name A name for the published data set
  * @param {Object | Function} query A query object or function used to filter the results of a collection operation
  */
-Mongo.Collection.prototype.publish = function (name, query) {
+Mongo.Collection.prototype.publish = function (name, query, options) {
   var self = this
     , query = query || {};
   Meteor.publish(name, function(){
-      return self.find(_.extend(query, self._selector));
+      return self.find(_.extend(query, self._selector), options);
   });
 };
