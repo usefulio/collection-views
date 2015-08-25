@@ -27,9 +27,25 @@ CollectionView = function (sourceCollection) {
  // We need to override these fields to correctly mutate the selector argument
  // "find", "findOne", "insert", "update", "remove", "upsert"
   _.each(["find", "findOne"], function (key) {
-    self[key] = function (selector, callback) {
+    self[key] = function (/*selector, options, callback*/) {
+      var args = _.toArray(arguments);
+      
+      // Pull off any callback
+      var callback;
+      if (args.length &&
+          (args[args.length - 1] === undefined ||
+           args[args.length - 1] instanceof Function)) {
+        callback = args.pop();
+      }
+
+      // We use the mongo package's internal methods to properly extract the arguments
+      var selector = self._getFindSelector(args);
+      var options = self._getFindOptions(args);
+
       selector = self._mutateSelector(selector);
-      return self._mongoCollection[key](selector, callback);
+      options = self._mutateOptions(options);
+
+      return self._mongoCollection[key](selector, options, callback);
     };
   });
 
@@ -37,6 +53,15 @@ CollectionView = function (sourceCollection) {
     self[key] = function (selector) {
       var args = _.toArray(arguments);
       args[0] = self._mutateSelector(selector);
+
+      // Warn the developer if field specifier is detected
+      var narrowingOptions = self._mutateOptions();
+      _.each(narrowingOptions, function (val, argKey) {
+        if (argKey == 'fields') {
+          console.warn('Passing a "fields" argument has no effect on the "' + key + '" method!');
+        }
+      });
+
       return self._mongoCollection[key].apply(self._mongoCollection, args);
     };
   });
@@ -56,10 +81,12 @@ CollectionView = function (sourceCollection) {
  * @param {Object | Function} query A query object or function used to filter the results of a collection operation
  * @return {Object} The narrowed collection view object
  */
-Mongo.Collection.prototype.where = CollectionView.prototype.where = function (query) {
+Mongo.Collection.prototype.where = CollectionView.prototype.where = function (query, options) {
   var sourceCollection = this;
   var collectionView = new CollectionView(sourceCollection);
-  collectionView._narrowingQuery = {query: query};
+  collectionView._narrowingQuery = { query: query };
+  if (! _.isUndefined(options))
+    collectionView._narrowingOptions = options;
   return collectionView;
 };
 
@@ -95,15 +122,78 @@ CollectionView.prototype._mutateSelector = function (selector, query) {
       // If narrowingQuery is a function we should pass the result of calling that function
       if (_.isFunction(narrowingQuery))
         narrowingQuery = narrowingQuery();
-      _.extend(query, narrowingQuery)
+      _.extend(query, narrowingQuery);
     }
-    collection = collection._parentCollection
+    collection = collection._parentCollection;
   }
 
   if (LocalCollection._selectorIsId(selector))
     selector = {_id: selector};
 
   return _.extend({}, selector, query);
+};
+
+/**
+ * @summary This function builds the options object by extending the parent's options object
+ * @locus Anywhere
+ * @protected
+ * @method _mutateOptions
+ * @memberOf CollectionView
+ * @param {Object | String} The input options
+ * @return {Object} The chained options object
+ */
+CollectionView.prototype._mutateOptions = function (options) {
+  var collection = this
+    , options = options || {}
+    , narrowedFields = false;
+
+  while (collection) {
+    if (! _.isUndefined(collection._narrowingOptions)) {
+      if (! _.isUndefined(options.fields)) {
+        var innerFields = options.fields;
+        var outerFields = collection._narrowingOptions.fields;
+        var remainingFields = {};
+        _.each(innerFields, function (a, key) {
+          if (a == 1 && (! _.any(outerFields, isOne) || outerFields[key] == 1)) {
+            remainingFields[key] = a;
+          } else if (a == 0) {
+            remainingFields[key] = a;
+          }
+        });
+        _.each(outerFields, function (a, key) {
+          if (a == 1 && (! _.any(innerFields, isOne) || innerFields[key] == 1)) {
+            remainingFields[key] = a;
+          } else if (a == 0) {
+            remainingFields[key] = a;
+          }
+        });
+        options.fields = remainingFields;
+        
+        // Store the info that the options.fields have been narrowed
+        if ((_.size(innerFields) + _.size(outerFields)) > _.size(remainingFields))
+          narrowedFields = true;
+      } else
+        options.fields = collection._narrowingOptions.fields;
+    }
+    collection = collection._parentCollection;
+  }
+
+  // mix including and excluding fields
+  if (_.any(options.fields, isOne)) {
+    _.each(options.fields, function (val, key) {
+      if (val === 0)
+        delete options.fields[key];
+    });
+  }
+
+  // The fields have been narrowed completely, however meteor/mongo treat an
+  // empty fields object as explicitly allowing everything, so we should
+  // explicitly set the _id field to 1 to signal meteor/mongo to return only
+  // the id field.
+  if (narrowedFields && _.isEmpty(options.fields))
+    options.fields = { _id: 1 }
+
+  return options;
 };
 
 /**
@@ -121,3 +211,23 @@ Mongo.Collection.prototype.publish = function (name, query, options) {
       return self.find(_.extend(query, self._selector), options);
   });
 };
+
+/**
+ * @summary Underscore predicate; checks if value is 1
+ * @locus Anywhere
+ * @param {Number} value The input value
+ * @return {Boolean} True if value is 1
+ */
+function isOne (value) {
+  return value === 1;
+}
+
+/**
+ * @summary Underscore predicate; checks if value is 0
+ * @locus Anywhere
+ * @param {Number} value The input value
+ * @return {Boolean} True if value is 0
+ */
+function isZero (value) {
+  return value === 0;
+}
