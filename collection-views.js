@@ -40,7 +40,7 @@ CollectionView = function (sourceCollection) {
       return self._mongoCollection[key].apply(self._mongoCollection, args);
     };
   });
-}
+};
 
 /**
  * @summary A method which takes a single argument (a query or a function which returns a query)
