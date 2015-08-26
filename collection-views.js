@@ -67,7 +67,8 @@ CollectionView = function (sourceCollection) {
   });
 
   self.publish = function (name, query, options) {
-    self._mongoCollection._selector = self._mutateSelector(self._mongoCollection._selector, query);
+    query = self._mutateSelector(self._mongoCollection._selector, query);
+    options = self._mutateOptions(options);
     return self._mongoCollection.publish.apply(self._mongoCollection, [name, query, options]);
   }
 }
@@ -149,31 +150,37 @@ CollectionView.prototype._mutateOptions = function (options) {
 
   while (collection) {
     if (! _.isUndefined(collection._narrowingOptions)) {
-      if (! _.isUndefined(options.fields)) {
-        var innerFields = options.fields;
-        var outerFields = collection._narrowingOptions.fields;
-        var remainingFields = {};
-        _.each(innerFields, function (a, key) {
-          if (a == 1 && (! _.any(outerFields, isOne) || outerFields[key] == 1)) {
-            remainingFields[key] = a;
-          } else if (a == 0) {
-            remainingFields[key] = a;
+      _.each(collection._narrowingOptions, function (val, key) {
+        if (! _.isUndefined(options[key])) {
+          if (key === 'fields') {
+            var innerFields = options[key];
+            var outerFields = val;
+            var remainingFields = {};
+            _.each(innerFields, function (a, key) {
+              if (a == 1 && (! _.any(outerFields, isOne) || outerFields[key] == 1)) {
+                remainingFields[key] = a;
+              } else if (a == 0) {
+                remainingFields[key] = a;
+              }
+            });
+            _.each(outerFields, function (a, key) {
+              if (a == 1 && (! _.any(innerFields, isOne) || innerFields[key] == 1)) {
+                remainingFields[key] = a;
+              } else if (a == 0) {
+                remainingFields[key] = a;
+              }
+            });
+            options[key] = remainingFields;
+            // Store the info that the options[key] have been narrowed
+            if ((_.size(innerFields) + _.size(outerFields)) > _.size(remainingFields))
+              narrowedFields = true;
+          } else {
+            _.extend(options[key], val);
           }
-        });
-        _.each(outerFields, function (a, key) {
-          if (a == 1 && (! _.any(innerFields, isOne) || innerFields[key] == 1)) {
-            remainingFields[key] = a;
-          } else if (a == 0) {
-            remainingFields[key] = a;
-          }
-        });
-        options.fields = remainingFields;
-        
-        // Store the info that the options.fields have been narrowed
-        if ((_.size(innerFields) + _.size(outerFields)) > _.size(remainingFields))
-          narrowedFields = true;
-      } else
-        options.fields = collection._narrowingOptions.fields;
+        } else {
+          options[key] = val;
+        }
+      });
     }
     collection = collection._parentCollection;
   }
