@@ -476,23 +476,100 @@ Tinytest.add('CollectionViews - field specifier - works with a query specifier',
     "narrowed find results match equivilent find operation");
 });
 
+// Set up different publications to test
+if (Meteor.isServer) {
+  books = new Mongo.Collection('books1');
+  books = seedCollection(books);
+  books.where({ kind: 'book' }).publish("myBooks");
+  
+  magazines = new Mongo.Collection('books2');
+  magazines = seedCollection(magazines);
+  magazines.where({ kind: 'magazine' }, { limit: 1 }).publish("oneMagazine");
+  
+  fictionBooks = new Mongo.Collection('books3');
+  fictionBooks = seedCollection(fictionBooks);
+  fictionBooks.where({ kind: 'book' }).publish("fictionBooks", { genre: 'fiction' });
+  
+  twoBooks = new Mongo.Collection('books4');
+  twoBooks = seedCollection(twoBooks);
+  twoBooks.publish("twoBooks", { kind: 'book'}, { limit: 2 });
+  
+  scienceMagazines = new Mongo.Collection('books5');
+  scienceMagazines = seedCollection(scienceMagazines);
+  scienceMagazines
+    .where({ kind: 'magazine' })
+    .where({ genre: 'science' })
+    .publish("scienceMagazines");
+}
+
+Tinytest.addAsync('CollectionViews - publish - works with `where`\'s query argument', function(test, next) {
+  var conn = DDP.connect('http://localhost:3000');
+  var collection = new Mongo.Collection('books1', conn);
+  conn.subscribe('myBooks', function() {
+    test.equal(collection.find().count(), 3);
+    next();
+  });
+});
+
+Tinytest.addAsync('CollectionViews - publish - works with `where`\'s query and options arguments', function(test, next) {
+  var conn = DDP.connect('http://localhost:3000');
+  var collection = new Mongo.Collection('books2', conn);
+  conn.subscribe('oneMagazine', function() {
+    test.equal(collection.find().count(), 1);
+    next();
+  });
+});
+
+Tinytest.addAsync('CollectionViews - publish - works with `where`\'s query and `publish`\'s query arguments', function(test, next) {
+  var conn = DDP.connect('http://localhost:3000');
+  var collection = new Mongo.Collection('books3', conn);
+  conn.subscribe('fictionBooks', function() {
+    test.equal(collection.find().count(), 2);
+    next();
+  });
+});
+
+Tinytest.addAsync('CollectionViews - publish - works with `publish`\'s query and options arguments', function(test, next) {
+  var conn = DDP.connect('http://localhost:3000');
+  var collection = new Mongo.Collection('books4', conn);
+  conn.subscribe('twoBooks', function() {
+    test.equal(collection.find().count(), 2);
+    next();
+  });
+});
+
+Tinytest.addAsync('CollectionViews - publish - works with chained `where` methods', function(test, next) {
+  var conn = DDP.connect('http://localhost:3000');
+  var collection = new Mongo.Collection('books5', conn);
+  conn.subscribe('scienceMagazines', function() {
+    test.equal(collection.find().count(), 1);
+    test.equal(collection.findOne().title, 'Science Magazine 1');
+    next();
+  });
+});
+
 function newCollection () {
-  var Books = new Mongo.Collection(null);
-  Books.remove({});
-  Books.insert({ title: 'Fiction Book 1', kind: 'book', genre: 'fiction', catalogId: 0 });
-  Books.insert({ title: 'Fiction Book 2', kind: 'book', genre: 'fiction', catalogId: 1 });
-  Books.insert({ title: 'Science Book 1', kind: 'book', genre: 'science', catalogId: 2 });
-  Books.insert({ title: 'Science Magazine 1', kind: 'magazine', genre: 'science', catalogId: 3 });
-  Books.insert({ title: 'Fiction Magazine 1', kind: 'magazine', genre: 'fiction', catalogId: 4 });
-  Books.insert({ title: 'Removable 1', kind: 'kind1', genre: 'removable', catalogId: 5 });
-  Books.insert({ title: 'Removable 2', kind: 'kind2', genre: 'removable', catalogId: 6 });
-  Books.insert({ title: 'Removable 3', kind: 'kind2', genre: 'removable', catalogId: 7 });
-  Books.insert({ title: 'Non-Removable 1', kind: 'kind2', genre: 'nonremovable', catalogId: 8 });
-  Books.insert({ title: 'Removable 4', kind: 'kind3', genre: 'removable', catalogId: 9 });
-  Books.insert({ title: 'Chainable 1', kind: 'leaflet', genre: 'advertising', year: 1999, catalogId: 10 });
-  Books.insert({ title: 'Chainable 2', kind: 'leaflet', genre: 'cooking', year: 1999, catalogId: 11 });
-  Books.insert({ title: 'Chainable 3', kind: 'tome', genre: 'cooking', year: 1999, catalogId: 12 });
-  Books.insert({ title: 'Chainable 4', kind: 'tome', genre: 'cooking', year: 2000, catalogId: 13 });
-  Books.insert({ title: 'Chainable 5', kind: 'tome', genre: 'advertising', year: 2001, catalogId: 14 });
-  return Books;
+  var collection = new Mongo.Collection(null);
+  collection = seedCollection(collection);
+  return collection;
+}
+
+function seedCollection (collection) {
+  collection.remove({});
+  collection.insert({ title: 'Fiction Book 1', kind: 'book', genre: 'fiction', catalogId: 0 });
+  collection.insert({ title: 'Fiction Book 2', kind: 'book', genre: 'fiction', catalogId: 1 });
+  collection.insert({ title: 'Science Book 1', kind: 'book', genre: 'science', catalogId: 2 });
+  collection.insert({ title: 'Science Magazine 1', kind: 'magazine', genre: 'science', catalogId: 3 });
+  collection.insert({ title: 'Fiction Magazine 1', kind: 'magazine', genre: 'fiction', catalogId: 4 });
+  collection.insert({ title: 'Removable 1', kind: 'kind1', genre: 'removable', catalogId: 5 });
+  collection.insert({ title: 'Removable 2', kind: 'kind2', genre: 'removable', catalogId: 6 });
+  collection.insert({ title: 'Removable 3', kind: 'kind2', genre: 'removable', catalogId: 7 });
+  collection.insert({ title: 'Non-Removable 1', kind: 'kind2', genre: 'nonremovable', catalogId: 8 });
+  collection.insert({ title: 'Removable 4', kind: 'kind3', genre: 'removable', catalogId: 9 });
+  collection.insert({ title: 'Chainable 1', kind: 'leaflet', genre: 'advertising', year: 1999, catalogId: 10 });
+  collection.insert({ title: 'Chainable 2', kind: 'leaflet', genre: 'cooking', year: 1999, catalogId: 11 });
+  collection.insert({ title: 'Chainable 3', kind: 'tome', genre: 'cooking', year: 1999, catalogId: 12 });
+  collection.insert({ title: 'Chainable 4', kind: 'tome', genre: 'cooking', year: 2000, catalogId: 13 });
+  collection.insert({ title: 'Chainable 5', kind: 'tome', genre: 'advertising', year: 2001, catalogId: 14 });
+  return collection;
 }
