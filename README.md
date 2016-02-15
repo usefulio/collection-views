@@ -2,7 +2,7 @@
 
 Creates a `where` method for your collections for narrowing your queries
 
-**This is a work in progress.**
+**Note: This package modifies the Mongo.Collection prototype, which makes it incompatible with (last time I checked) matb33:meteor-collection-hooks, you can use our [experimental collection hooks package](https://github.com/usefulio/collection-hooks) instead if you need collection hooks, but we currently use jagi:astronomy which provides document level events.**
 
 ### Installation
 Simply add the `useful:collection-views` package to your meteor app and you can start using the `where` method on your collections.
