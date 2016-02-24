@@ -65,10 +65,10 @@ Mongo.Collection.prototype.where = CollectionView.prototype.where = function (qu
  *          e.g. we want to allow selectors like {_id: "123", kind: "public"}
  */
 var LocalCollection = Package.minimongo.LocalCollection;
-LocalCollection._selectorIsIdPerhapsAsObject = function (selector) {
-  return LocalCollection._selectorIsId(selector) ||
-    (selector && typeof selector === "object" && selector._id && LocalCollection._selectorIsId(selector._id));
-};
+// LocalCollection._selectorIsIdPerhapsAsObject = function (selector) {
+//   return LocalCollection._selectorIsId(selector) ||
+//     (selector && typeof selector === "object" && selector._id && LocalCollection._selectorIsId(selector._id));
+// };
 
 /**
  * @summary This function narrows a selector to only include documents from this
