@@ -27,10 +27,9 @@ CollectionView = function (sourceCollection) {
  // We need to override these fields to correctly mutate the selector argument
  // "find", "findOne", "insert", "update", "remove", "upsert"
   _.each(["find", "findOne"], function (key) {
-    self[key] = function (selector) {
-      var args = _.toArray(arguments);
+    self[key] = function (selector, callback) {
       selector = self._mutateSelector(selector);
-      return self._mongoCollection[key].apply(self._mongoCollection, args);
+      return self._mongoCollection[key](selector, callback);
     };
   });
 
