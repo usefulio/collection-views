@@ -20,6 +20,7 @@ Package.onTest(function(api) {
   api.use([
     'tinytest'
     , 'mongo'
+    , 'underscore'
   ]);
   api.use('useful:collection-views');
   api.addFiles('collection-views-tests.js');

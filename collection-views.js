@@ -107,9 +107,12 @@ LocalCollection._selectorIsIdPerhapsAsObject = function (selector) {
  * @param {Object | String} The input selector
  * @return {Object} The narrowed selector
  */
-CollectionView.prototype._mutateSelector = function (selector, query) {
+CollectionView.prototype._mutateSelector = function (query) {
   var collection = this
     , query = query || {};
+
+  if (LocalCollection._selectorIsId(query))
+    query = {_id: query};
 
   while (collection) {
     if (! _.isUndefined(collection._narrowingQuery)) {
@@ -117,15 +120,15 @@ CollectionView.prototype._mutateSelector = function (selector, query) {
       // If narrowingQuery is a function we should pass the result of calling that function
       if (_.isFunction(narrowingQuery))
         narrowingQuery = narrowingQuery();
-      _.extend(query, narrowingQuery);
+      if (_.isObject(narrowingQuery) && _.keys(narrowingQuery).length) {
+        query.$and = query.$and || [];
+        query.$and.push(narrowingQuery);
+      }
     }
     collection = collection._parentCollection;
   }
 
-  if (LocalCollection._selectorIsId(selector))
-    selector = {_id: selector};
-
-  return _.extend({}, selector, query);
+  return query;
 };
 
 /**
